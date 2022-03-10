@@ -1,0 +1,7 @@
+[submodule "freertos"]
+	path = freertos
+	url = https://github.com/aws/amazon-freertos.git
+	branch = release
+[submodule "components/memfault-firmware-sdk"]
+	path = components/memfault-firmware-sdk
+	url = https://github.com/memfault/memfault-firmware-sdk.git
