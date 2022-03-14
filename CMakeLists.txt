@@ -5,30 +5,35 @@ set(CMAKE_PROJECT_NAME ${PROJECT_NAME})
 
 project(${PROJECT_NAME})
 
+# Include the Memfault SDK
 set(MEMFAULT_FIRMWARE_SDK components/memfault-firmware-sdk)
 set(MEMFAULT_PLATFORM_PORT_COMPONENTS main)
+# # disable Memfault HTTP client, conflicts with the AFR one
+# set(MEMFAULT_ESP_HTTP_CLIENT_ENABLE 0)
 include(${MEMFAULT_FIRMWARE_SDK}/ports/esp_idf/memfault.cmake)
 
-set(esp_idf_dir "${CMAKE_CURRENT_LIST_DIR}/freertos/vendors/espressif/esp-idf")
 # Pull in ESP-IDF defined CMake build infrastructure logic to configure the project, discover all the components, etc
+set(esp_idf_dir "${CMAKE_CURRENT_LIST_DIR}/freertos/vendors/espressif/esp-idf")
 include(${esp_idf_dir}/tools/cmake/idf.cmake)
+get_filename_component(
+    ABS_EXTRA_COMPONENT_DIRS
+    "${MEMFAULT_FIRMWARE_SDK}/ports/esp_idf/memfault" ABSOLUTE
+)
+idf_build_component(${ABS_EXTRA_COMPONENT_DIRS})
 
 # Need to set these to prevent AFR from injecting the demo ones >_<
 set(IDF_PROJECT_EXECUTABLE ${PROJECT_NAME}.elf)
-get_filename_component(TOP_DIR
-  "${CMAKE_CURRENT_LIST_DIR}/main"
-  ABSOLUTE
-)
 set(IDF_EXECUTABLE_SRCS
-  # ${TOP_DIR}/cmd_system.c
-  # ${TOP_DIR}/cmd_wifi.c
-  # ${TOP_DIR}/config.c
-  # ${TOP_DIR}/console_example_main.c
-  # ${TOP_DIR}/memfault_platform_device_info.c
-  # keep this around for now... in case we remove the above, still need to block
-  # AFR from swapping in their own exe srcs
-  ${TOP_DIR}/stub.c
+  # stop AFR from swapping in their own exe srcs
+  ${CMAKE_CURRENT_LIST_DIR}/main/stub.c
 )
+
+# Add our sources as a "main" component
+get_filename_component(
+    ABS_EXTRA_COMPONENT_DIRS
+    "${CMAKE_CURRENT_LIST_DIR}/main/" ABSOLUTE
+)
+idf_build_component(${ABS_EXTRA_COMPONENT_DIRS})
 
 # Inject a custom FreeRTOSConfig.h
 include_directories(BEFORE freertos_configs)
@@ -36,9 +41,11 @@ include_directories(BEFORE freertos_configs)
 # Add FreeRTOS as a subdirectory. AFR_BOARD tells which board to target.
 set(AFR_BOARD espressif.esp32_wrover_kit CACHE INTERNAL "")
 add_subdirectory(freertos)
-add_subdirectory(main)
 
-target_link_libraries(${PROJECT_NAME}.elf PRIVATE
+# Include our "main" component when linking
+target_link_libraries(${IDF_PROJECT_EXECUTABLE}
+  PRIVATE
+  idf::main
 )
 
 # # Add the Memfault Build ID so each build can have a unique version.
