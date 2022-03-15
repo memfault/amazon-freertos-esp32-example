@@ -3,6 +3,11 @@
 This is an example project for the ESP32 Wrover kit, based around the Amazon
 FreeRTOS SDK.
 
+> NOTE: this was built based on [this
+> version](https://github.com/aws/amazon-freertos/releases/tag/202107.00) of the
+> amazon-freertos repo, which is tracked as a submodule in this repo. Other
+> versions may not be compatibile due to build system changes.
+
 ## Building the Example
 
 This example is based loosely around the instructions here (which are incomplete
